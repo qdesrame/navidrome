@@ -2,10 +2,12 @@ package metadata
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -13,6 +15,7 @@ import (
 
 	"github.com/djherbis/times"
 	"github.com/google/uuid"
+
 	"github.com/navidrome/navidrome/conf"
 	"github.com/navidrome/navidrome/consts"
 	"github.com/navidrome/navidrome/log"
@@ -173,12 +176,41 @@ func (t Tags) Lyrics() string {
 		}
 	}
 
+	fileLyrics, err := t.ParseLyricFile()
+	if err != nil {
+		log.Warn("Unexpected error occurred when parsing lyrics file", "file", t.filePath, "error", err)
+	} else if fileLyrics != nil {
+		lyricList = append(lyricList, *fileLyrics)
+	}
+
 	res, err := json.Marshal(lyricList)
 	if err != nil {
 		log.Warn("Unexpected error occurred when serializing lyrics", "file", t.filePath, "error", err)
 		return ""
 	}
+
 	return string(res)
+}
+
+func (t Tags) ParseLyricFile() (*model.Lyrics, error) {
+	lyricsPath := strings.TrimSuffix(t.filePath, filepath.Ext(t.filePath)) + ".lrc"
+	_, err := os.Stat(lyricsPath)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		log.Warn("Unexpected error occurred when checking for lyrics file", "file", lyricsPath, "error", err)
+		return nil, err
+	}
+
+	// read data from lyricsPath file
+	lyricsContent, err := os.ReadFile(lyricsPath)
+	if err != nil {
+		log.Warn("Unexpected error occurred when reading lyrics file", "file", lyricsPath, "error", err)
+		return nil, err
+	}
+
+	return model.ToLyrics("xxx", string(lyricsContent))
 }
 
 func (t Tags) Compilation() bool       { return t.getBool("tcmp", "compilation", "wm/iscompilation") }
@@ -319,7 +351,7 @@ func (t Tags) getDate(tagNames ...string) (int, string) {
 		return year, match[1]
 	}
 
-	//then try YYYY-MM-DD
+	// then try YYYY-MM-DD
 	if len(tag) > 10 {
 		tag = tag[:10]
 	}
