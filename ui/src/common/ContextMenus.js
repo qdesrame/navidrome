@@ -41,6 +41,8 @@ const ContextMenu = ({
   className,
   songQueryParams,
   hideInfo,
+  onClose,
+  anchorPosition,
 }) => {
   const classes = useStyles({ color })
   const dataProvider = useDataProvider()
@@ -120,6 +122,9 @@ const ContextMenu = ({
 
   const handleOnClose = (e) => {
     e.preventDefault()
+    if (onClose != null) {
+      onClose(e)
+    }
     setAnchorEl(null)
     e.stopPropagation()
   }
@@ -134,7 +139,6 @@ const ContextMenu = ({
   }
 
   const handleItemClick = (e) => {
-    setAnchorEl(null)
     const key = e.target.getAttribute('value')
     if (options[key].needData) {
       dataProvider
@@ -150,10 +154,11 @@ const ContextMenu = ({
       options[key].action(record)
     }
 
-    e.stopPropagation()
+    handleOnClose(e)
   }
 
-  const open = Boolean(anchorEl)
+  const open = Boolean(anchorEl) || Boolean(anchorPosition)
+  const anchorReference = anchorPosition == null ? 'anchorEl' : 'anchorPosition'
 
   return (
     <span className={clsx(classes.noWrap, className)}>
@@ -175,7 +180,9 @@ const ContextMenu = ({
       </IconButton>
       <Menu
         id="context-menu"
+        anchorReference={anchorReference}
         anchorEl={anchorEl}
+        anchorPosition={anchorPosition}
         keepMounted
         open={open}
         onClose={handleOnClose}

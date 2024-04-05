@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   GridList,
   GridListTile,
@@ -132,11 +132,22 @@ const AlbumGridTile = ({ showArtist, record, basePath, ...props }) => {
   const isDesktop = useMediaQuery((theme) => theme.breakpoints.up('md'), {
     noSsr: true,
   })
+  const [rightClickAnchorPosition, setRightClickAnchorPosition] = useState(null)
+  const handleContextMenu = (event) => {
+    event.preventDefault()
+    setRightClickAnchorPosition({
+      top: event.clientY,
+      left: event.clientX,
+    })
+  }
+  const handleClose = () => {
+    setRightClickAnchorPosition(null)
+  }
   if (!record) {
     return null
   }
   return (
-    <div className={classes.albumContainer}>
+    <div className={classes.albumContainer} onContextMenu={handleContextMenu}>
       <Link
         className={classes.link}
         to={linkToRecord(basePath, record.id, 'show')}
@@ -151,7 +162,14 @@ const AlbumGridTile = ({ showArtist, record, basePath, ...props }) => {
               size="small"
             />
           }
-          actionIcon={<AlbumContextMenu record={record} color={'white'} />}
+          actionIcon={
+            <AlbumContextMenu
+              record={record}
+              color={'white'}
+              anchorPosition={rightClickAnchorPosition}
+              onClose={handleClose}
+            />
+          }
         />
       </Link>
       <Link
