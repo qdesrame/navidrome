@@ -157,7 +157,7 @@ const ContextMenu = ({
     handleOnClose(e)
   }
 
-  const open = Boolean(anchorEl) || Boolean(anchorPosition)
+  const open = Boolean(anchorEl) || (anchorPosition?.record?.id === record.id)
   const anchorReference = anchorPosition == null ? 'anchorEl' : 'anchorPosition'
 
   return (

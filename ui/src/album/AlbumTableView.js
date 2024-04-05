@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react'
+import React, {useMemo, useState} from 'react'
 import {
   Datagrid,
   DatagridBody,
   DatagridRow,
-  DateField,
+  DateField, FunctionField,
   NumberField,
   TextField,
 } from 'react-admin'
@@ -61,15 +61,15 @@ const AlbumDatagridRow = (props) => {
     }),
     [record],
   )
-  return <DatagridRow ref={dragAlbumRef} {...props} />
+  return <DatagridRow ref={dragAlbumRef} {...props} onContextMenu={props.rightClickMenu(record)}/>
 }
 
 const AlbumDatagridBody = (props) => (
-  <DatagridBody {...props} row={<AlbumDatagridRow />} />
+  <DatagridBody {...props} row={<AlbumDatagridRow rightClickMenu={props.rightClickMenu}/>} />
 )
 
 const AlbumDatagrid = (props) => (
-  <Datagrid {...props} body={<AlbumDatagridBody />} />
+  <Datagrid {...props} body={<AlbumDatagridBody rightClickMenu={props.rightClickMenu}/>} />
 )
 
 const AlbumTableView = ({
@@ -109,6 +109,20 @@ const AlbumTableView = ({
     }
   }, [classes.ratingField, isDesktop])
 
+  const [rightClickAnchorPosition, setRightClickAnchorPosition] = useState(null)
+  const handleContextMenu = (record) => (event) => {
+    event.preventDefault()
+
+    setRightClickAnchorPosition({
+      record,
+      top: event.clientY,
+      left: event.clientX,
+    })
+  }
+  const handleClose = () => {
+    setRightClickAnchorPosition(null)
+  }
+
   const columns = useSelectedFields({
     resource: 'album',
     columns: toggleableFields,
@@ -142,13 +156,14 @@ const AlbumTableView = ({
         </>
       )}
       linkType={'show'}
-      rightIcon={(r) => <AlbumContextMenu record={r} />}
+      rightIcon={(r) => <AlbumContextMenu record={r} anchorPosition={rightClickAnchorPosition} onClose={handleClose}/>}
       {...rest}
     />
   ) : (
-    <AlbumDatagrid rowClick={'show'} classes={{ row: classes.row }} {...rest}>
-      <TextField source="name" />
+    <AlbumDatagrid rowClick={'show'} rightClickMenu={handleContextMenu} classes={{ row: classes.row }} {...rest}>
+      <TextField source="name" onContextMenu={handleContextMenu}/>
       {columns}
+      <FunctionField label="icon" render={record => <p>{record.name}</p> } />
       <AlbumContextMenu
         source={'starred'}
         sortBy={'starred ASC, starredAt ASC'}
@@ -163,6 +178,8 @@ const AlbumTableView = ({
             />
           )
         }
+        anchorPosition={rightClickAnchorPosition}
+        onClose={handleClose}
       />
     </AlbumDatagrid>
   )

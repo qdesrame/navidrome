@@ -136,6 +136,7 @@ const AlbumGridTile = ({ showArtist, record, basePath, ...props }) => {
   const handleContextMenu = (event) => {
     event.preventDefault()
     setRightClickAnchorPosition({
+      record,
       top: event.clientY,
       left: event.clientX,
     })
